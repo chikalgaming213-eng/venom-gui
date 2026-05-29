@@ -14,16 +14,18 @@ echo "[*] installing Seeker dependencies..."
 sudo apt install -y php-cli git
 pip3 install requests packaging psutil --break-system-packages
 
-# Clone Seeker repository
+# Clone Seeker repository (jika belum ada)
 if [ -d "seeker" ]; then
-    echo "[!] Seeker folder already exists, removing old..."
-    rm -rf seeker
+    echo "[!] Seeker folder already exists, updating..."
+    cd seeker && git pull && cd ..
+else
+    git clone https://github.com/thewhiteh4t/seeker.git
 fi
-git clone https://github.com/thewhiteh4t/seeker.git
+
 if [ -d "seeker" ]; then
     echo "[+] Seeker cloned successfully."
     chmod +x seeker/seeker.py seeker/install.sh
-    # Jalankan installer seeker (opsional, tapi aman)
+    # Jalankan installer seeker (opsional, aman)
     cd seeker && ./install.sh && cd ..
 else
     echo "[-] Failed to clone Seeker. Install manually later."
