@@ -1,5 +1,4 @@
-# VENOM GUI - Kali Linux Attack Tool
-[»kalz pro Active!!«]
+# VENOM GUI - Kali Linux Attack Tool by kalz
 ## Install
 chmod +x install.sh
 ./install.sh
