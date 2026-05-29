@@ -210,3 +210,18 @@ Setelah GUI terbuka, isi data target di panel kiri, lalu klik tombol sesuai kebu
     Fungsi: Membersihkan tampilan konsol output.
 
     Cara: Klik CLEAR CONSOLE
+HASIL SCAN
+
+Semua hasil scan disimpan secara otomatis di folder results/ dengan nama file deskriptif:
+File	Deskripsi
+ping_results.txt	Host hidup hasil ping sweep
+portscan_results.txt	Port terbuka
+dirbrute.txt	Direktori web yang ditemukan
+sql_results.txt	Indikasi SQL injection
+subdomain_results.txt	Subdomain
+whatweb_results.txt	Fingerprint teknologi
+nmap_full_results.txt	Output Nmap lengkap
+revshell_payloads.txt	Payload reverse shell
+fullattack_*.txt	Hasil full attack
+
+Anda bisa membuka file-file tersebut dengan cat results/namafile atau melalui file manager.
