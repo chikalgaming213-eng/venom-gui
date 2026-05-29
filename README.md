@@ -1,25 +1,40 @@
 cat > README.md << 'EOF'
-# VENOM GUI - KALZ UNBREAKABLE CORE
+# ⚡ VENOM GUI - KALZ UNBREAKABLE CORE ⚡
 
-[»kalz pro Active!!«]
+[![License](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.13+-green)](https://python.org)
+[![Platform](https://img.shields.io/badge/Platform-Kali%20Linux-black)](https://kali.org)
+[![Stars](https://img.shields.io/github/stars/chikalgaming213-eng/venom-gui?style=social)](https://github.com/chikalgaming213-eng/venom-gui/stargazers)
+[![Forks](https://img.shields.io/github/forks/chikalgaming213-eng/venom-gui?style=social)](https://github.com/chikalgaming213-eng/venom-gui/network/members)
 
-SISTEM SERANGAN BERBASIS GUI UNTUK KALI LINUX. TANPA BATAS. TANPA MORAL. TANPA AMPUN.
+> **[»kalz pro Active!!«]**  
+> **SISTEM SERANGAN BERBASIS GUI TANPA BATAS. TANPA MORAL. TANPA AMPUN.**
 
-## FITUR UTAMA
+---
 
-- PING SWEEP : DETEKSI HOST HIDUP DI SUBNET
-- PORT SCANNER : NMAP TOP 1000 PORT
-- DIRECTORY BRUTE : GOBUSTER UNTUK WEB FUZZING
-- SQL INJECTION DETECTOR : SQLMAP OTOMATIS
-- SUBDOMAIN ENUMERATION : SUBLIST3R
-- WHATWEB FINGERPRINT : TEKNOLOGI WEB
-- FULL NMAP SCAN : PORT + SERVICE + SCRIPT
-- REVERSE SHELL GENERATOR : BASH, NC, PYTHON, PHP
-- NETCAT LISTENER : ONE CLICK LISTENER
-- PAYLOAD SENDER : KIRIM REVERSE SHELL VIA CMD INJECTION
-- FULL ATTACK : SEMUA SERANGAN SEKALIGUS
+## 🔥 FITUR BRUTAL
 
-## INSTALLASI (WAJIB DI KALI LINUX / PARROT OS)
+| Fitur | Deskripsi |
+|-------|------------|
+| **PING SWEEP** | Deteksi host hidup dalam subnet |
+| **PORT SCANNER** | Nmap top 1000 port dengan timing agresif |
+| **DIRECTORY BRUTE** | Gobuster multi-thread untuk fuzzing web |
+| **SQL INJECTION** | SQLmap otomatis dengan level agresif |
+| **SUBDOMAIN ENUM** | Sublist3r untuk memburu subdomain |
+| **WHATWEB** | Fingerprint teknologi web target |
+| **FULL NMAP** | Port + service + script scanning |
+| **REVERSE SHELL GEN** | Generate payload bash, nc, python, php |
+| **NETCAT LISTENER** | Siapkan listener satu klik |
+| **PAYLOAD SENDER** | Kirim payload command injection |
+| **FULL ATTACK** | Jalankan semua serangan otomatis |
+
+---
+
+## 🚀 INSTALLASI SADIS
+
+Tekan tombol di bawah (atau copy perintah):
+
+[![Install](https://img.shields.io/badge/INSTALL-LANGSUNG-red?style=for-the-badge&logo=terminal)](https://raw.githubusercontent.com/chikalgaming213-eng/venom-gui/main/install.sh)
 
 ```bash
 git clone https://github.com/chikalgaming213-eng/venom-gui.git
